@@ -19,6 +19,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 TOKEN = os.environ.get("NOTIFICATIONS_BOT_TOKEN")
 
+updater = Updater(TOKEN, use_context=True)
+
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -116,7 +118,8 @@ def to_db(chat_id, movie_name, movie_link):
     db = client.movie_alerts
     db.alerts.insert_one({"chat_id": chat_id, "movie_name": movie_name, "movie_link": movie_link})
 
-def check_movies(updater):
+def check_movies():
+    print("in")
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
@@ -140,7 +143,6 @@ def main():
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
 
-    updater = Updater(TOKEN, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -164,8 +166,6 @@ def main():
                       port=PORT,
                       url_path=TOKEN,
                       webhook_url="https://my-notifications-bot.herokuapp.com/" + TOKEN)
-    
-    check_movies(updater)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
