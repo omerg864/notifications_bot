@@ -78,18 +78,23 @@ def remove_from_db(url, chat_id):
     db.alerts.delete_many({"chat_id": chat_id, "movie_link": url})
 
 def alert_list(update, context):
-    chat_id = update.message.chat_id
-    ca = certifi.where()
-    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
-    db = client.movie_alerts
-    alerts = db.alerts.find({"chat_id": chat_id})
-    if alerts.count() == 0:
-        update.message.reply_text("You have no alerts!")
-    else:
-        index = 1
-        for alert in alerts:
-            message = idnex + ". " + alert["movie_name"]
-        update.message.reply_text(message)
+    try:
+        chat_id = update.message.chat_id
+        ca = certifi.where()
+        client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+        db = client.movie_alerts
+        alerts = db.alerts.find({"chat_id": chat_id})
+        if alerts.count() == 0:
+            update.message.reply_text("You have no alerts!")
+        else:
+            index = 1
+            message = ""
+            for alert in alerts:
+                message += idnex + ". " + alert["movie_name"] + "\n"
+            update.message.reply_text(message)
+    except Exception as e:
+        print(e)
+        update.message.reply_text("Something went wrong!")
 
 def delete_alert(update: Update, context: CallbackContext):
     try:
