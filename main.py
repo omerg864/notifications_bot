@@ -53,7 +53,7 @@ def movie_alert(update: Update, context: CallbackContext):
     print(chat_id)
     movie_name, year = get_movie_info(update.message.text.replace("/moviealert ", ""))
     movie_name1 = movie_name.replace(":", "")
-    movie_name1 = movie_name1.replace(" ", "-") + "-" + str(year)
+    movie_name1 = movie_name1.replace(" ", "-").lower() + "-" + str(year)
     movie_link = f"https://yts.mx/movies/{movie_name1}"
     to_db(chat_id, movie_name, movie_link)
     update.message.reply_text("You will be notified when " + movie_name + " is released!")
@@ -69,11 +69,11 @@ def check_movies(updater):
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
     movies = db.alerts.find()
-    print(movies)
     for movie in movies:
         movie_link = movie['movie_link']
         r = requests.get(movie_link, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(r, 'html.parser')
+        print(soup.title.string)
         if "Page not found (Error 404)" not in soup.title.string:
             db.alerts.delete_one({"_id": movie['_id']})
             movie_name = movie['movie_name']
