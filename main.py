@@ -88,6 +88,7 @@ def alert_list(update, context):
         message = ""
         for alert in alerts:
             message += str(index) + ". " + alert["movie_name"] + "\n"
+            index += 1
         if message != "":
             update.message.reply_text(message)
         else:
