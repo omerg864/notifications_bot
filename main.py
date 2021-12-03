@@ -38,6 +38,16 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+def stop(update, context):
+    """Stop the bot."""
+    update.message.reply_text('Deleting all of your alerts! bye!')
+    chat_id = update.message.chat_id
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    db.alerts.delete_many({"chat_id": chat_id})
+    
+
 def get_movie_info(url):
     r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text
     soup = BeautifulSoup(r, 'html.parser')
@@ -49,14 +59,36 @@ def movie_alert(update: Update, context: CallbackContext):
     """
     This function will be called when the user sends a message to the bot.
     """
-    chat_id = update.message.chat_id
-    print(chat_id)
-    movie_name, year = get_movie_info(update.message.text.replace("/moviealert ", ""))
-    movie_name1 = movie_name.replace(":", "")
-    movie_name1 = movie_name1.replace(" ", "-").lower() + "-" + str(year)
-    movie_link = f"https://yts.mx/movies/{movie_name1}"
-    to_db(chat_id, movie_name, movie_link)
-    update.message.reply_text("You will be notified when " + movie_name + " is released!")
+    try:
+        chat_id = update.message.chat_id
+        movie_name, year = get_movie_info(update.message.text.replace("/moviealert ", ""))
+        movie_name1 = movie_name.replace(":", "")
+        movie_name1 = movie_name1.replace(" ", "-").lower() + "-" + str(year)
+        movie_link = f"https://yts.mx/movies/{movie_name1}"
+        to_db(chat_id, movie_name, movie_link)
+        update.message.reply_text("You will be notified when " + movie_name + " is released!")
+    except Exception as e:
+        print(e)
+        update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
+
+def remove_from_db(url, chat_id):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    db.alerts.delete_many({"chat_id": chat_id, "movie_link": url})
+
+def delete_alert(update: Update, context: CallbackContext):
+    try:
+        chat_id = update.message.chat_id
+        movie_name, year = get_movie_info(update.message.text.replace("/deletealert ", ""))
+        movie_name1 = movie_name.replace(":", "")
+        movie_name1 = movie_name1.replace(" ", "-").lower() + "-" + str(year)
+        movie_link = f"https://yts.mx/movies/{movie_name1}"
+        remove_from_db(movie_link, chat_id)
+        update.message.reply_text(movie_name + " is removed from the movie alert list!")
+    except Exception as e:
+        print(e)
+        update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
 
 def to_db(chat_id, movie_name, movie_link):
     ca = certifi.where()
@@ -97,6 +129,8 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("moviealert", movie_alert))
+    dp.add_handler(MessageHandler("stop", stop))
+    dp.add_handler(MessageHandler("deletealert", delete_alert))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
