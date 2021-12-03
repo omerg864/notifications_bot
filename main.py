@@ -12,6 +12,8 @@ import time
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
+coupons_url = "https://couponscorpion.com/"
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -136,6 +138,104 @@ def check_movies():
             updater.bot.send_message(chat_id, "Hey! " + movie_name + " is out! Check it out here: " + movie_link)
             updater.bot.send_message(chat_id, "Also I removed the movie from the movie alert list!")
 
+def register_coupons(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    db.registered.insert_one({"_id": update.message.chat_id})
+    update.message.reply_text("You are now registered for coupons alerts!")
+
+def unregister_coupons(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    db.registered.delete_one({"_id": update.message.chat_id})
+    update.message.reply_text("You are now unregistered for coupons alerts!")
+
+def get_coupons():
+    ##"""Get the coupons from the website."""
+    try:
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text
+        soup = BeautifulSoup(response, "html.parser")
+        list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
+        articles = list_of_coupons.find_all("article")
+        first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+        first_coupon_url = first_name.find("a")["href"]
+        new_coupons, last_url = connect_to_db_coupons(first_coupon_url, True)
+        if new_coupons:
+            hit = False
+            for article in articles:
+                try:
+                    name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+                    coupon_url = name.find("a")["href"]
+                    if coupon_url == last_url:
+                        hit = True
+                        break
+                    percent = article.find("span", {"class": "grid_onsale"}).text
+                    if "100%" not in percent:
+                        continue
+                    image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
+                    time.sleep(3)
+                    send_coupons(name.text, percent, coupon_url, image)
+                except Exception as e:
+                    print(e)
+                    print("False coupon found")
+            if not hit:
+                index = 2
+                while not hit:
+                    page_url = url + f"page/{index}/"
+                    response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
+                    soup = BeautifulSoup(response, "html.parser")
+                    list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
+                    articles = list_of_coupons.find_all("article")
+                    first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+                    coupon_url = first_name.find("a")["href"]
+                    if coupon_url == last_url:
+                        hit = True
+                        break
+                    for article in articles:
+                        try:
+                            name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+                            coupon_url = name.find("a")["href"]
+                            if coupon_url == last_url:
+                                hit = True
+                                break
+                            percent = article.find("span", {"class": "grid_onsale"}).text
+                            if "100%" not in percent:
+                                continue
+                            image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
+                            time.sleep(3)
+                            send_message(name.text, percent, coupon_url, image)
+                        except Exception as e:
+                            print(e)
+                            print("False coupon found")
+                    index += 1
+            connect_to_db_coupons(first_coupon_url, False)
+    except Exception as e:
+        print(e)
+
+def connect_to_db_coupons(url, read):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    if not read:
+        query = {"_id" : 1 }
+        db.coupons.replace_one(query ,{"url": url, "_id" : 1})
+    else:
+        last_url = db.coupons.find_one({"_id": 1})["url"]
+        if last_url == url:
+            print("No new coupons found")
+            return [False, last_url]
+        return [True, last_url]
+
+def send_message(name, percent, coupon_url, image):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    chat_ids = db.registered.find()
+    for chat_id in chat_ids:
+        updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
+
 
 def main():
     """Start the bot."""
@@ -154,6 +254,8 @@ def main():
     dp.add_handler(CommandHandler("stop", stop))
     dp.add_handler(CommandHandler("deletealert", delete_alert))
     dp.add_handler(CommandHandler("alertlist", alert_list))
+    dp.add_handler(CommandHandler("coupons", register_coupons))
+    dp.add_handler(CommandHandler("unregistercoupons", unregister_coupons))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
