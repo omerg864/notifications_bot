@@ -12,7 +12,7 @@ import time
 url = "https://couponscorpion.com/"
 
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
-PORT = int(os.environ.get('PORT', 80))
+PORT = int(os.environ.get('PORT', 8443))
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -61,9 +61,9 @@ def main():
 
     # Start the Bot
     updater.start_webhook(listen="0.0.0.0",
-                          port=int(PORT),
-                          url_path=TOKEN)
-    updater.bot.setWebhook('https://my-notifications-bot.herokuapp.com/' + TOKEN)
+                      port=PORT,
+                      url_path=TOKEN,
+                      webhook_url="https://my-notifications-bot.herokuapp.com/" + TOKEN)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
