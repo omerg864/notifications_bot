@@ -12,14 +12,14 @@ import time
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
-updater = Updater(TOKEN, use_context=True)
-
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 TOKEN = os.environ.get("NOTIFICATIONS_BOT_TOKEN")
+
+updater = Updater(TOKEN, use_context=True)
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
