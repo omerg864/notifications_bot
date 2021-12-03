@@ -50,8 +50,7 @@ def movie_alert(update: Update, context: CallbackContext):
     """
     chat_id = update.message.chat_id
     print(chat_id)
-    print(update.message.text)
-    movie_name, year = get_movie_info(update.message.text)
+    movie_name, year = get_movie_info(update.message.text.replace("/moviealert ", ""))
     movie_name1 = movie_name.replace(":", "")
     movie_name1 = movie_name1.replace(" ", "-") + "-" + str(year)
     movie_link = f"https://yts.mx/movies/{movie_name1}"
