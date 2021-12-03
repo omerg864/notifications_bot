@@ -12,7 +12,7 @@ import time
 url = "https://couponscorpion.com/"
 
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
-PORT = int(os.environ.get('PORT', 5000))
+PORT = int(os.environ.get('PORT', 80))
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
