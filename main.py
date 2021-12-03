@@ -83,8 +83,7 @@ def alert_list(update, context):
         ca = certifi.where()
         client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
         db = client.movie_alerts
-        alerts = db.alerts.find({"chat_id": chat_id})
-        print(alerts)
+        alerts = db.alerts.find_all({"chat_id": chat_id})
         if len(alerts) == 0:
             update.message.reply_text("You have no alerts!")
         else:
