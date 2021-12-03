@@ -84,15 +84,14 @@ def alert_list(update, context):
         client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
         db = client.movie_alerts
         alerts = db.alerts.find({"chat_id": chat_id})
-        print(alerts)
-        if len(alerts) == 0:
-            update.message.reply_text("You have no alerts!")
-        else:
-            index = 1
-            message = ""
-            for alert in alerts:
-                message += idnex + ". " + alert["movie_name"] + "\n"
+        index = 1
+        message = ""
+        for alert in alerts:
+            message += idnex + ". " + alert["movie_name"] + "\n"
+        if message != "":
             update.message.reply_text(message)
+        else:
+            update.message.reply_text("You have no alerts!")
     except Exception as e:
         print(e)
         update.message.reply_text("Something went wrong!")
