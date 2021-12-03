@@ -49,6 +49,8 @@ def movie_alert(update: Update, context: CallbackContext):
     This function will be called when the user sends a message to the bot.
     """
     chat_id = update.message.chat_id
+    print(chat_id)
+    print(update.message.text)
     movie_name, year = get_movie_info(update.message.text)
     movie_name1 = movie_name.replace(":", "")
     movie_name1 = movie_name1.replace(" ", "-") + "-" + str(year)
