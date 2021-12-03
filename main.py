@@ -42,14 +42,16 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-def stop(update, context):
+def stop_bot(update, context):
     """Stop the bot."""
-    update.message.reply_text('Deleting all of your alerts! bye!')
+    update.message.reply_text('Deleting all of your alerts and stopping the bot! bye!')
     chat_id = update.message.chat_id
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
     db.alerts.delete_many({"chat_id": chat_id})
+    db = client.new_database
+    db.registered.delete_many({"_id" : chat_id})
     
 
 def get_movie_info(url):
@@ -113,6 +115,9 @@ def delete_alert(update: Update, context: CallbackContext):
     except Exception as e:
         print(e)
         update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
+
+def clear_movie_alerts(update, context):
+    pass
 
 def to_db(chat_id, movie_name, movie_link):
     ca = certifi.where()
@@ -251,7 +256,8 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("moviealert", movie_alert))
-    dp.add_handler(CommandHandler("stop", stop))
+    dp.add_handler(CommandHandler("clearmoviealerts", clear_movie_alerts))
+    dp.add_handler(CommandHandler("stopbot", stop_bot))
     dp.add_handler(CommandHandler("deletealert", delete_alert))
     dp.add_handler(CommandHandler("alertlist", alert_list))
     dp.add_handler(CommandHandler("coupons", register_coupons))
