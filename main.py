@@ -12,6 +12,8 @@ import time
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
+updater = Updater(TOKEN, use_context=True)
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -72,14 +74,19 @@ def check_movies():
         movie_link = movie['movie_link']
         r = requests.get(movie_link, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(r, 'html.parser')
-        
+        if "Page not found (Error 404)" not in soup.title.string:
+            db.alerts.delete_one({"_id": movie['_id']})
+            movie_name = movie['movie_name']
+            chat_id = movie['chat_id']
+            updater.bot.send_message(chat_id, "Hey! " + movie_name + " is out! Check it out here: " + movie_link)
+            updater.bot.send_message(chat_id, "Also I removed the movie from the movie alert list!")
+
 
 def main():
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater(TOKEN, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
