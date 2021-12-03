@@ -77,6 +77,20 @@ def remove_from_db(url, chat_id):
     db = client.movie_alerts
     db.alerts.delete_many({"chat_id": chat_id, "movie_link": url})
 
+def alert_list(update, context):
+    chat_id = update.message.chat_id
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    alerts = db.alerts.find({"chat_id": chat_id})
+    if alerts.count() == 0:
+        update.message.reply_text("You have no alerts!")
+    else:
+        index = 1
+        for alert in alerts:
+            message = idnex + ". " + alert["movie_name"]
+        update.message.reply_text(message)
+
 def delete_alert(update: Update, context: CallbackContext):
     try:
         chat_id = update.message.chat_id
@@ -131,6 +145,7 @@ def main():
     dp.add_handler(CommandHandler("moviealert", movie_alert))
     dp.add_handler(MessageHandler("stop", stop))
     dp.add_handler(MessageHandler("deletealert", delete_alert))
+    dp.add_handler(MessageHandler("alertlist", echo))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
