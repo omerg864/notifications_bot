@@ -9,8 +9,6 @@ import pymongo
 import certifi
 import time
 
-url = "https://couponscorpion.com/"
-
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
@@ -39,6 +37,31 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+def get_movie_info(url):
+    r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text
+    soup = BeautifulSoup(r, 'html.parser')
+    movie_name = soup.find('h1', {'class': 'TitleHeader__TitleText-sc-1wu6n3d-0 cLNRlG'}).text
+    year = int(soup.find_all('a', {'class': 'ipc-link ipc-link--baseAlt ipc-link--inherit-color TitleBlockMetaData__StyledTextLink-sc-12ein40-1 rgaOW'})[0].text)
+    return [movie_name, year]
+
+def movie_alert(update: Update, context: CallbackContext):
+    """
+    This function will be called when the user sends a message to the bot.
+    """
+    chat_id = update.message.chat_id
+    movie_name, year = get_movie_info(update.message.text)
+    movie_name1 = movie_name.replace(":", "")
+    movie_name1 = movie_name1.replace(" ", "-") + "-" + str(year)
+    movie_link = f"https://yts.mx/movies/{movie_name1}"
+    #to_db(chat_id, movie_name, movie_link)
+    update.message.reply_text("You will be notified when " + movie_name + " is released!")
+
+def to_db(chat_id, movie_name, movie_link):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    db.coupons.insert_one({"chat_id": chat_id, "movie_name": movie_name, "movie_link": movie_link})
+
 def main():
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
@@ -52,6 +75,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("movie-alert", echo))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
