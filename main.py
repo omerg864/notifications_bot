@@ -54,7 +54,7 @@ def movie_alert(update: Update, context: CallbackContext):
     movie_name1 = movie_name.replace(":", "")
     movie_name1 = movie_name1.replace(" ", "-") + "-" + str(year)
     movie_link = f"https://yts.mx/movies/{movie_name1}"
-    #to_db(chat_id, movie_name, movie_link)
+    to_db(chat_id, movie_name, movie_link)
     update.message.reply_text("You will be notified when " + movie_name + " is released!")
 
 def to_db(chat_id, movie_name, movie_link):
