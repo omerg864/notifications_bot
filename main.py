@@ -155,7 +155,7 @@ def unregister_coupons(update, context):
 def get_coupons():
     ##"""Get the coupons from the website."""
     try:
-        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).text
+        response = requests.get(coupons_url, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(response, "html.parser")
         list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
         articles = list_of_coupons.find_all("article")
@@ -183,7 +183,7 @@ def get_coupons():
             if not hit:
                 index = 2
                 while not hit:
-                    page_url = url + f"page/{index}/"
+                    page_url = coupons_url + f"page/{index}/"
                     response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
                     soup = BeautifulSoup(response, "html.parser")
                     list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
