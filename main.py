@@ -145,7 +145,7 @@ def main():
     dp.add_handler(CommandHandler("moviealert", movie_alert))
     dp.add_handler(MessageHandler("stop", stop))
     dp.add_handler(MessageHandler("deletealert", delete_alert))
-    dp.add_handler(MessageHandler("alertlist", echo))
+    dp.add_handler(MessageHandler("alertlist", alert_list))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
