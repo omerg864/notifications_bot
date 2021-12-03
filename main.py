@@ -61,7 +61,18 @@ def to_db(chat_id, movie_name, movie_link):
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
-    db.coupons.insert_one({"chat_id": chat_id, "movie_name": movie_name, "movie_link": movie_link})
+    db.alerts.insert_one({"chat_id": chat_id, "movie_name": movie_name, "movie_link": movie_link})
+
+def check_movies():
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    movies = db.alerts.find()
+    for movie in movies:
+        movie_link = movie['movie_link']
+        r = requests.get(movie_link, headers={'User-Agent': 'Mozilla/5.0'}).text
+        soup = BeautifulSoup(r, 'html.parser')
+        
 
 def main():
     """Start the bot."""
