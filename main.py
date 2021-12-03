@@ -69,6 +69,7 @@ def check_movies(updater):
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
     movies = db.alerts.find()
+    print(movies)
     for movie in movies:
         movie_link = movie['movie_link']
         r = requests.get(movie_link, headers={'User-Agent': 'Mozilla/5.0'}).text
