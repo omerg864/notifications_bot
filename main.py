@@ -94,7 +94,7 @@ def movie_alert(update: Update, context: CallbackContext):
     try:
         chat_id = update.message.chat_id
         movie_name, year = get_movie_info(update.message.text.replace("/moviealert ", ""))
-        movie_name1 = ''.join(char for char in movie_name1 if char.isalnum() or char == ' ' or char == '-')
+        movie_name1 = ''.join(char for char in movie_name if char.isalnum() or char == ' ' or char == '-')
         movie_name1 = movie_name1.replace(" ", "-").lower() + "-" + str(year)
         movie_link = f"https://yts.mx/movies/{movie_name1}"
         to_db(chat_id, movie_name, movie_link)
