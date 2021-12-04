@@ -27,7 +27,8 @@ updater = Updater(TOKEN, use_context=True)
 
 commands = ["moviealert - following imdb url to add to your movie alert list", "deletealert - following imdb url to delete from your movie alert list",
             "alertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
-            "unregistercoupons - unregister from receiving Udemy coupons", "stopbot - stop the bot and deletes your alert list"]
+            "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change" 
+            "unregisterfuelnotifications - unregister from receiving fuel costs notifications" ,"stopbot - stop the bot and deletes your alert list"]
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -247,7 +248,7 @@ def get_coupons():
                             print("False coupon found")
                     index += 1
                     count += 1
-                    if count == 50:
+                    if count == 30:
                         break
             connect_to_db_coupons(first_coupon_url, False)
     except Exception as e:
@@ -401,7 +402,7 @@ def main():
     dp.add_handler(CommandHandler("coupons", register_coupons))
     dp.add_handler(CommandHandler("unregistercoupons", unregister_coupons))
     dp.add_handler(CommandHandler("commandlist", command_list))
-    dp.add_handler(CommandHandler("registerfuelnotifQications", register_fuel_notifications))
+    dp.add_handler(CommandHandler("fuelcosts", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
 
     # on noncommand i.e message - echo the message on Telegram
