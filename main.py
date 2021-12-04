@@ -194,7 +194,6 @@ def get_coupons():
         articles = list_of_coupons.find_all("article")
         first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         first_coupon_url = first_name.find("a")["href"]
-        print(first_coupon_url)
         new_coupons, last_url = connect_to_db_coupons(first_coupon_url, True)
         if new_coupons:
             hit = False
@@ -202,6 +201,8 @@ def get_coupons():
                 try:
                     name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
                     coupon_url = name.find("a")["href"]
+                    print(coupon_url)
+                    print(last_url)
                     if coupon_url == last_url:
                         hit = True
                         break
@@ -261,8 +262,6 @@ def connect_to_db_coupons(url, read):
         db.coupons.replace_one(query ,{"url": url, "_id" : 1})
     else:
         last_url = db.coupons.find_one({"_id": 1})["url"]
-        print(last_url)
-        print(url)
         if last_url == url:
             print("No new coupons found")
             return [False, last_url]
