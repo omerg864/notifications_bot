@@ -369,16 +369,22 @@ def register_fuel_notifications(update, context):
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.fuel
     chat_id = update.message.chat_id
-    db.registered.insert_one({"_id": chat_id})
-    update.message.reply_text("you will receive notifications about fuel prices")
+    if db.registered.find_one({"_id": chat_id}) == None:
+        db.registered.insert_one({"_id": chat_id})
+        update.message.reply_text("you will receive notifications about fuel prices")
+    else:
+        update.message.reply_text("you are already registered")
 
 def unregister_fuel_notifications(update, context):
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.fuel
     chat_id = update.message.chat_id
-    db.registered.delete_one({"_id": chat_id})
-    update.message.reply_text("you will not receive notifications about fuel prices")
+    if db.registered.find_one({"_id": chat_id}) != None:
+        db.registered.delete_one({"_id": chat_id})
+        update.message.reply_text("you will not receive notifications about fuel prices")
+    else:
+        update.message.reply_text("you are not registered")
 
 
 def main():
