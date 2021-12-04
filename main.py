@@ -443,7 +443,7 @@ def main():
     dp.add_handler(CommandHandler("commandlist", command_list))
     dp.add_handler(CommandHandler("fuelcosts", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
-    dp.add_handler(CommandHandler("alertlist", fuel_costs_list))
+    dp.add_handler(CommandHandler("alertlist", alert_list))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
