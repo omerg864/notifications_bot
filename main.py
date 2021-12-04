@@ -239,7 +239,7 @@ def get_coupons():
                                 continue
                             image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
                             time.sleep(3)
-                            send_message(name.text, percent, coupon_url, image)
+                            send_coupons(name.text, percent, coupon_url, image)
                         except Exception as e:
                             print(e)
                             print("False coupon found")
@@ -398,7 +398,7 @@ def main():
     dp.add_handler(CommandHandler("coupons", register_coupons))
     dp.add_handler(CommandHandler("unregistercoupons", unregister_coupons))
     dp.add_handler(CommandHandler("commandlist", command_list))
-    dp.add_handler(CommandHandler("registerfuelnotifications", register_fuel_notifications))
+    dp.add_handler(CommandHandler("registerfuelnotifQications", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
 
     # on noncommand i.e message - echo the message on Telegram
