@@ -168,8 +168,8 @@ def check_movies():
             db.alerts.delete_one({"_id": movie['_id']})
             movie_name = movie['movie_name']
             chat_id = movie['chat_id']
-            updater.bot.send_message(chat_id, "Hey! " + movie_name + " is out! Check it out here: " + movie_link)
-            updater.bot.send_message(chat_id, "Also I removed the movie from the movie alert list!")
+            updater.dispatcher.bot.send_message(chat_id, "Hey! " + movie_name + " is out! Check it out here: " + movie_link)
+            updater.dispatcher.bot.send_message(chat_id, "Also I removed the movie from the movie alert list!")
 
 def register_coupons(update, context):
     ca = certifi.where()
