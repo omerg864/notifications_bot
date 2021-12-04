@@ -8,6 +8,8 @@ import signal
 import pymongo
 import certifi
 import time
+from PyPDF2 import PdfFileReader
+import io
 
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
@@ -23,16 +25,38 @@ TOKEN = os.environ.get("NOTIFICATIONS_BOT_TOKEN")
 
 updater = Updater(TOKEN, use_context=True)
 
+commands = ["moviealert - following imdb url to add to your movie alert list", "deletealert - following imdb url to delete from your movie alert list",
+            "alertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
+            "unregistercoupons - unregister from receiving Udemy coupons", "stopbot - stop the bot and deletes your alert list"]
+
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
+    update.message.reply_text('Hi! check out the commands with /help')
 
 def help(update, context):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
+    message = ""
+    index = 1
+    for command in commands:
+        message += str(index) + ". " + command + "\n"
+        index += 1
+    if message != "":
+        update.message.reply_text(message)
+    else:
+        update.message.reply_text("Can't help you! good luck!")
+
+def command_list(update, context):
+    message = ""
+    for command in commands:
+        message += command + "\n"
+    if message != "":
+        update.message.reply_text(message)
+    else:
+        update.message.reply_text("Can't help you! good luck!")
+
 
 def echo(update, context):
     """Echo the user message."""
@@ -117,7 +141,11 @@ def delete_alert(update: Update, context: CallbackContext):
         update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
 
 def clear_movie_alerts(update, context):
-    pass
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.movie_alerts
+    chat_id = update.message.chat_id
+    db.alerts.delete_many({"chat_id": chat_id})
 
 def to_db(chat_id, movie_name, movie_link):
     ca = certifi.where()
@@ -166,6 +194,7 @@ def get_coupons():
         articles = list_of_coupons.find_all("article")
         first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         first_coupon_url = first_name.find("a")["href"]
+        print(first_coupon_url)
         new_coupons, last_url = connect_to_db_coupons(first_coupon_url, True)
         if new_coupons:
             hit = False
@@ -228,6 +257,8 @@ def connect_to_db_coupons(url, read):
         db.coupons.replace_one(query ,{"url": url, "_id" : 1})
     else:
         last_url = db.coupons.find_one({"_id": 1})["url"]
+        print(last_url)
+        print(url)
         if last_url == url:
             print("No new coupons found")
             return [False, last_url]
@@ -240,6 +271,110 @@ def send_coupons(name, percent, coupon_url, image):
     chat_ids = db.registered.find()
     for chat_id in chat_ids:
         updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
+
+def get_fuel_settings():
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    fuel_settings = db.settings.find_one({"_id": 1})
+    return fuel_settings["month"], fuel_settings["year"]
+
+def get_data_from_gov():
+    months = ["jan", "feb", "march", "april", "may", "june", "july", "august", "sep", "october", "nov", "dec"]
+    months_full = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
+    gov_url = "https://www.gov.il/BlobFolder/news/fuel_{month}_{year}/he/fuel_{index}_{year}.pdf"
+    gov_alt_url = "https://www.gov.il/BlobFolder/news/fuel_{month}_{year}/he/{index}_{year}.pdf"
+    month, year = get_fuel_settings()
+    try:
+        print(gov_url.format(month=months[month], year=f"{year}", index=f"{month + 1}"))
+        response = requests.get(gov_url.format(month=months[month], year=f"{year}", index=f"{month + 1}"))
+        if "<title>error page</title>" not in response.text:
+            get_from_pdf(response, month, year)
+        else:
+            print(gov_url.format(month=months[month], year=f"{year}", index=f"{months[month]}"))
+            response = requests.get(gov_url.format(month=months[month], year=f"{year}", index=f"{months[month]}"))
+            if "<title>error page</title>" not in response.text:
+                get_from_pdf(response, month, year)
+            else:
+                print(gov_alt_url.format(month=months[month], year=f"{year}", index=f"{month + 1}"))
+                response = requests.get(gov_alt_url.format(month=months[month], year=f"{year}", index=f"{month + 1}"))
+                if "<title>error page</title>" not in response.text:
+                    get_from_pdf(response, month, year)
+                else:
+                    print(gov_alt_url.format(month=months[month], year=f"{year}", index=f"{months[month]}"))
+                    response = requests.get(
+                        gov_alt_url.format(month=months[month], year=f"{year}", index=f"{months[month]}"))
+                    if "<title>error page</title>" not in response.text:
+                        get_from_pdf(response, month, year)
+                    else:
+                        print(gov_url.format(month=months[month], year=f"{year}", index=f"{months_full[month]}"))
+                        response = requests.get(
+                            gov_url.format(month=months[month], year=f"{year}", index=f"{months_full[month]}"))
+                        if "<title>error page</title>" not in response.text:
+                            get_from_pdf(response, month, year)
+    except Exception as e:
+        print(e)
+        print("error")
+
+def get_from_pdf(response, month, year):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    registered = db.registered.find()
+    with io.BytesIO(response.content) as f:
+        pdf = PdfFileReader(f)
+        numpage = 1
+        page = pdf.getPage(numpage)
+        page_content = page.extractText()
+        pc = page_content.split("\n")
+        pc = list(filter(lambda a: a != "" and a != " ", pc))
+        print(pc)
+        for i in range(len(pc)):
+            if pc[i] == '-':
+                pc[i + 1] = pc[i] + pc[i + 1]
+        for i in range(pc.count("-")):
+            pc.remove("-")
+        pc = pc[-16:]
+        # print the content in the page 20
+        print(pc)
+        if "-" in pc[3]:
+            perc = pc[3].replace("-", "")
+            price = pc[1] + " ₪ לליטר"
+            message = f"מחיר הדלק הולך לרדת ב{perc} ויעמוד על {price}. כדאי לחכות לתדלק אחריי הירידה."
+        else:
+            price = pc[1] + " ₪"
+            message = f"מחיר הדלק הולך לעלות ב{pc[3]} ויעמוד על {price}. כדאי לתדלק עכשיו."
+        for user in registered:
+            updater.dispatcher.bot.sendMessage(chat_id=user["_id"], text=message)
+        update_fuel_settings(month, year)
+
+def update_fuel_settings(month, year):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    query = {"_id": 1}
+    if month == 11:
+        month = 0
+        year += 1
+    else:
+        month += 1
+    db.settings.replace_one(query, {"_id": 1, "month": month, "year": year})
+
+def register_fuel_notifications(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    chat_id = update.message.chat_id
+    db.registered.insert_one({"_id": chat_id})
+    update.message.reply_text("you will receive notifications about fuel prices")
+
+def unregister_fuel_notifications(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    chat_id = update.message.chat_id
+    db.registered.delete_one({"_id": chat_id})
+    update.message.reply_text("you will not receive notifications about fuel prices")
 
 
 def main():
@@ -262,6 +397,9 @@ def main():
     dp.add_handler(CommandHandler("alertlist", alert_list))
     dp.add_handler(CommandHandler("coupons", register_coupons))
     dp.add_handler(CommandHandler("unregistercoupons", unregister_coupons))
+    dp.add_handler(CommandHandler("commandlist", command_list))
+    dp.add_handler(CommandHandler("registerfuelnotifications", register_fuel_notifications))
+    dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
