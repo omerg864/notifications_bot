@@ -26,9 +26,10 @@ TOKEN = os.environ.get("NOTIFICATIONS_BOT_TOKEN")
 updater = Updater(TOKEN, use_context=True)
 
 commands = ["moviealert - following imdb url to add to your movie alert list", "deletealert - following imdb url to delete from your movie alert list",
-            "alertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
-            "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change" 
-            "unregisterfuelnotifications - unregister from receiving fuel costs notifications" ,"stopbot - stop the bot and deletes your alert list"]
+            "moviealertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
+            "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change",
+            "unregisterfuelnotifications - unregister from receiving fuel costs notifications", "alertlist - list of all registered services" 
+            ,"stopbot - stop the bot and deletes your alert list"]
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -108,7 +109,7 @@ def remove_from_db(url, chat_id):
     db = client.movie_alerts
     db.alerts.delete_many({"chat_id": chat_id, "movie_link": url})
 
-def alert_list(update, context):
+def movie_alert_list(update, context):
     try:
         chat_id = update.message.chat_id
         ca = certifi.where()
@@ -176,15 +177,21 @@ def register_coupons(update, context):
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.new_database
-    db.registered.insert_one({"_id": update.message.chat_id})
-    update.message.reply_text("You are now registered for coupons alerts!")
+    if db.registered.find_one({"_id": update.message.chat_id}) is None:
+        db.registered.insert_one({"_id": update.message.chat_id})
+        update.message.reply_text("You are now registered for coupons alerts!")
+    else:
+        update.message.reply_text("You are already registered for coupons alerts!")
 
 def unregister_coupons(update, context):
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.new_database
-    db.registered.delete_one({"_id": update.message.chat_id})
-    update.message.reply_text("You are now unregistered for coupons alerts!")
+    if db.registered.find_one({"_id": update.message.chat_id}) is not None:
+        db.registered.delete_one({"_id": update.message.chat_id})
+        update.message.reply_text("You are now unregistered for coupons alerts!")
+    else:
+        update.message.reply_text("You are not registered for coupons alerts!")
 
 def get_coupons():
     ##"""Get the coupons from the website."""
@@ -386,6 +393,32 @@ def unregister_fuel_notifications(update, context):
     else:
         update.message.reply_text("you are not registered")
 
+def alert_list(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.fuel
+    chat_id = update.message.chat_id
+    fuel = db.registered.find_one({"_id": chat_id})
+    message = "Registered services:\n"
+    index = 1
+    if fuel != None:
+        message += str(index) + ". " + "Israel fuel costs notifications" + "\n"
+        index += 1
+    db = client.new_database
+    coupon = db.registered.find_one({"_id": chat_id})
+    if coupon != None:
+        message += str(index) + ". " + "Udemy 100% off coupon notifications" + "\n"
+        index += 1
+    db = client.movie_alerts
+    movie = db.alerts.find({"chat_id": chat_id})
+    if movie != None:
+        message += str(index) + ". " + "Movie notifications" + "\n"
+        index += 1
+    if index == 1:
+        update.message.reply_text("you are not registered for any notifications")
+    else:
+        update.message.reply_text(message)
+
 
 def main():
     """Start the bot."""
@@ -404,12 +437,13 @@ def main():
     dp.add_handler(CommandHandler("clearmoviealerts", clear_movie_alerts))
     dp.add_handler(CommandHandler("stopbot", stop_bot))
     dp.add_handler(CommandHandler("deletealert", delete_alert))
-    dp.add_handler(CommandHandler("alertlist", alert_list))
+    dp.add_handler(CommandHandler("moviealertlist", movie_alert_list))
     dp.add_handler(CommandHandler("coupons", register_coupons))
     dp.add_handler(CommandHandler("unregistercoupons", unregister_coupons))
     dp.add_handler(CommandHandler("commandlist", command_list))
     dp.add_handler(CommandHandler("fuelcosts", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
+    dp.add_handler(CommandHandler("alertlist", fuel_costs_list))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
