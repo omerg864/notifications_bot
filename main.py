@@ -510,10 +510,13 @@ def create_organization(date):
         driver.find_element(By.XPATH, xpathA.format('/settings/')).click()
         # get checkbox
         checkbox = driver.find_element(By.NAME, "serv")
+        print("passed checkbox")
         if not checkbox.is_selected():
             checkbox.click()
+            print("checked checkbox")
             # save changes
             driver.find_element(By.XPATH, xpathButton.format('submit')).click()
+            print("saved changes")
             time.sleep(10)
             driver.quit()
             return True
