@@ -507,7 +507,7 @@ def create_organization(date):
         # go to home
         driver.get(base_url)
         # go to settings
-        driver.find_element(By.XPATH, xpathA.format('settings')).click()
+        driver.find_element(By.XPATH, xpathA.format('/settings/')).click()
         # get checkbox
         checkbox = driver.find_element(By.NAME, "serv")
         if not checkbox.is_selected():
