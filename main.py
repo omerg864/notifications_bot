@@ -461,6 +461,7 @@ def create_organization(date):
     xpathButton = '//button[contains(@type, \'{0}\')]'
     # get if logged in
     try:
+        print("logging in")
         # login link
         driver.find_element(By.XPATH, xpathA.format('login')).click()
         # username
@@ -526,6 +527,7 @@ def create_org(update, context):
     if message[0] == settings["password"]:
         accepted = True
     if accepted:
+        print("password accepted")
         date = message[1]
         if create_organization(date):
             update.message.reply_text("Organization created")
