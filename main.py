@@ -29,7 +29,7 @@ commands = ["moviealert - following imdb url to add to your movie alert list", "
             "moviealertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
             "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change",
             "unregisterfuelnotifications - unregister from receiving fuel costs notifications", "alertlist - list of all registered services" 
-            ,"stopbot - stop the bot and deletes your alert list"]
+            ,"stopbot - stops the bot and deletes your alert list"]
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -37,6 +37,7 @@ commands = ["moviealert - following imdb url to add to your movie alert list", "
 def start(update, context):
     """Send a message when the command /start is issued."""
     update.message.reply_text('Hi! check out the commands with /help')
+    update.message.reply_text('Also some times the server takes a while (about 30 seconds) to respond, so be patient!')
 
 def help(update, context):
     """Send a message when the command /help is issued."""
@@ -156,7 +157,7 @@ def to_db(chat_id, movie_name, movie_link):
     db.alerts.insert_one({"chat_id": chat_id, "movie_name": movie_name, "movie_link": movie_link})
 
 def check_movies():
-    print("in")
+    print("Checking movies...")
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.movie_alerts
@@ -165,7 +166,6 @@ def check_movies():
         movie_link = movie['movie_link']
         r = requests.get(movie_link, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(r, 'html.parser')
-        print(soup.title.string)
         if "Page not found (Error 404)" not in soup.title.string:
             db.alerts.delete_one({"_id": movie['_id']})
             movie_name = movie['movie_name']
@@ -195,6 +195,7 @@ def unregister_coupons(update, context):
 
 def get_coupons():
     ##"""Get the coupons from the website."""
+    print("Checking coupons...")
     try:
         response = requests.get(coupons_url, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(response, "html.parser")
@@ -209,8 +210,6 @@ def get_coupons():
                 try:
                     name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
                     coupon_url = name.find("a")["href"]
-                    print(coupon_url)
-                    print(last_url)
                     if coupon_url == last_url:
                         hit = True
                         break
@@ -289,6 +288,7 @@ def get_fuel_settings():
     return fuel_settings["month"], fuel_settings["year"]
 
 def get_data_from_gov():
+    print("Checking fuel costs...")
     months = ["jan", "feb", "march", "april", "may", "june", "july", "august", "sep", "october", "nov", "dec"]
     months_full = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
     gov_url = "https://www.gov.il/BlobFolder/news/fuel_{month}_{year}/he/fuel_{index}_{year}.pdf"
@@ -337,15 +337,12 @@ def get_from_pdf(response, month, year):
         page_content = page.extractText()
         pc = page_content.split("\n")
         pc = list(filter(lambda a: a != "" and a != " ", pc))
-        print(pc)
         for i in range(len(pc)):
             if pc[i] == '-':
                 pc[i + 1] = pc[i] + pc[i + 1]
         for i in range(pc.count("-")):
             pc.remove("-")
         pc = pc[-16:]
-        # print the content in the page 20
-        print(pc)
         if "-" in pc[3]:
             perc = pc[3].replace("-", "")
             price = pc[1] + " ₪ לליטר"
