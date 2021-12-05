@@ -225,7 +225,6 @@ def get_coupons():
                     print("False coupon found")
             if not hit:
                 index = 2
-                count = 0
                 while not hit:
                     page_url = coupons_url + f"page/{index}/"
                     response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
@@ -254,8 +253,7 @@ def get_coupons():
                             print(e)
                             print("False coupon found")
                     index += 1
-                    count += 1
-                    if count == 30:
+                    if index == 4:
                         break
             connect_to_db_coupons(first_coupon_url, False)
     except Exception as e:
