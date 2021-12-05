@@ -521,18 +521,20 @@ def get_manager_settings():
 
 def create_org(update, context):
     message = update.message.text
-    message = message.replace("/create_org ", "").split(" ")
+    message = message.replace("/createorg ", "").split(" ")
     settings = get_manager_settings()
     accepted = False
     if message[0] == settings["password"]:
         accepted = True
     if accepted:
-        print("password accepted")
+        update.message.reply_text("password accepted")
         date = message[1]
         if create_organization(date):
             update.message.reply_text("Organization created")
         else:
             update.message.reply_text("Could not create organization")
+    else:
+        update.message.reply_text("Wrong password")
 
 
 def main():
