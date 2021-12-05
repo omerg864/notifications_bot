@@ -15,7 +15,16 @@ pymongo == 4.0
 # D:\Code\Projects\movies-notifications\main.py: 4
 python_telegram_bot == 13.8.1
 
+# D:\Code\Projects\movies-notifications\main.py: 21
+random_user_agent == 1.0.1
+
 # D:\Code\Projects\movies-notifications\main.py: 2
 requests == 2.24.0
+
+# D:\Code\Projects\movies-notifications\main.py: 14,15,16
+selenium == 4.0.0
+
+# D:\Code\Projects\movies-notifications\main.py: 18
+webdriver_manager == 3.5.2
 
 pymongo[srv] == 4.0

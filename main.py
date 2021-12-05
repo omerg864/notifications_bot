@@ -11,6 +11,16 @@ import time
 from PyPDF2 import PdfFileReader
 import io
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import WebDriverException
+
+from webdriver_manager.chrome import ChromeDriverManager
+
+from random_user_agent.user_agent import UserAgent
+from random_user_agent.params import SoftwareName, OperatingSystem
+
+
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
@@ -30,6 +40,8 @@ commands = ["moviealert - following imdb url to add to your movie alert list", "
             "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change",
             "unregisterfuelnotifications - unregister from receiving fuel costs notifications", "alertlist - list of all registered services" 
             ,"stopbot - stops the bot and deletes your alert list"]
+
+manager_commands = ["managerlist - list of manager command require password"]
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -59,6 +71,28 @@ def command_list(update, context):
         update.message.reply_text(message)
     else:
         update.message.reply_text("Can't help you! good luck!")
+
+def get_driver():
+    software_names = [SoftwareName.CHROME.value]
+    operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value]
+
+    user_agent_rotator = UserAgent(software_names=software_names, operating_systems=operating_systems, limit=100)
+
+    user_agent = user_agent_rotator.get_random_user_agent()
+
+    chrome_options = Options()
+    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--window-size=1420,1080')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument(f'--user-agent={user_agent}')
+
+    s=Service(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(service=s, options=chrome_options)
+    return driver
 
 
 def echo(update, context):
@@ -414,6 +448,90 @@ def alert_list(update, context):
     else:
         update.message.reply_text(message)
 
+def create_organization(date):
+    driver = get_driver()
+    base_url = "http://mishmarramla.herokuapp.com/"
+    driver.maximize_window()
+    driver.get(base_url)
+    driver.implicitly_wait(10)
+    user_name = os.environ.get("MISHMAR_RAMLA_ADMIN")
+    password = os.environ.get("MISHMAR_RAMLA_ADMIN_PASS")
+    xpathA = '//a[contains(@href, \'{0}\')]'
+    xpathInput = '//input[contains(@name, \'{0}\')]'
+    xpathButton = '//button[contains(@type, \'{0}\')]'
+    # get if logged in
+    try:
+        # login link
+        driver.find_element(By.XPATH, xpathA.format('login')).click()
+        # username
+        driver.find_element(By.XPATH, xpathInput.format("username")).send_keys(user_name)
+        # password
+        driver.find_element(By.XPATH, xpathInput.format("password")).send_keys(password)
+        # login button
+        driver.find_element(By.XPATH, xpathButton.format('submit')).click()
+    except WebDriverException:
+        print("Already logged in")
+    # Go to admin site and create new organization
+    try:
+        # admin site button
+        driver.find_element(By.XPATH, xpathA.format('https://mishmarramla.herokuapp.com/admin')).click()
+        # go to organizations
+        driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization2/')).click()
+        # get table
+        dates = driver.find_element(By.ID, "result_list").find_elements(By.TAG_NAME, "a")
+        exist = False
+        for d in dates:
+            if d.text == date:
+                exist = True
+        if not exist:
+            # new organization button
+            driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization2/add/')).click()
+            # enter date
+            dateE = driver.find_element(By.XPATH, xpathInput.format("date"))
+            dateE.clear()
+            dateE.send_keys(date)
+            # save button
+            driver.find_element(By.XPATH, xpathInput.format("_save")).click()
+        # go to home
+        driver.get(base_url)
+        # go to settings
+        driver.find_element(By.XPATH, xpathA.format('settings')).click()
+        # get checkbox
+        checkbox = driver.find_element(By.ID, "id_submitting")
+        if not checkbox.is_selected():
+            checkbox.click()
+            # save changes
+            driver.find_element(By.XPATH, xpathButton.format('submit')).click()
+            time.sleep(10)
+            driver.quit()
+            return True
+    except WebDriverException:
+        print("ERROR")
+    time.sleep(10)
+    driver.quit()
+    return False
+
+def get_manager_settings():
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.manager
+    settings = db.settings.find_one({"_id": 1})
+    return settings
+
+def create_org(update, context):
+    message = update.message.text
+    message = message.replace("/create_org ", "").split(" ")
+    settings = get_manager_settings()
+    accepted = False
+    if message[0] == settings["password"]:
+        accepted = True
+    if accepted:
+        date = message[1]
+        if create_organization(date):
+            update.message.reply_text("Organization created")
+        else:
+            update.message.reply_text("Could not create organization")
+
 
 def main():
     """Start the bot."""
@@ -439,6 +557,11 @@ def main():
     dp.add_handler(CommandHandler("fuelcosts", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
     dp.add_handler(CommandHandler("alertlist", alert_list))
+
+
+    # manager commands
+
+    dp.add_handler(CommandHandler("createorg", create_org))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
