@@ -480,6 +480,7 @@ def create_organization(date):
         print("Already logged in")
     # Go to admin site and create new organization
     try:
+        print("creating new organization")
         # admin site button
         driver.find_element(By.XPATH, xpathA.format('https://mishmarramla.herokuapp.com/admin')).click()
         # go to organizations
