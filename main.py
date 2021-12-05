@@ -490,6 +490,9 @@ def create_organization(date):
         for d in dates:
             if d.text == date:
                 exist = True
+        # passed organization
+        print("passed organization")
+        print(exist)
         if not exist:
             # new organization button
             driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization2/add/')).click()
@@ -499,6 +502,7 @@ def create_organization(date):
             dateE.send_keys(date)
             # save button
             driver.find_element(By.XPATH, xpathInput.format("_save")).click()
+            print("created organization")
         # go to home
         driver.get(base_url)
         # go to settings
