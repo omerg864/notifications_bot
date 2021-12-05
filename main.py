@@ -484,7 +484,7 @@ def create_organization(date):
         # admin site button
         driver.find_element(By.XPATH, xpathA.format('https://mishmarramla.herokuapp.com/admin')).click()
         # go to organizations
-        driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization2/')).click()
+        driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization/')).click()
         # get table
         dates = driver.find_element(By.ID, "result_list").find_elements(By.TAG_NAME, "a")
         exist = False
@@ -496,7 +496,7 @@ def create_organization(date):
         print(exist)
         if not exist:
             # new organization button
-            driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization2/add/')).click()
+            driver.find_element(By.XPATH, xpathA.format('/admin/Schedule/organization/add/')).click()
             # enter date
             dateE = driver.find_element(By.XPATH, xpathInput.format("date"))
             dateE.clear()
