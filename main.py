@@ -284,7 +284,7 @@ def get_coupons():
         if out[0]:
             if not out[1]:
                 coupon_scorpion(coupons_url + 'page/2/')
-            connect_to_db_coupons(out[3], False)
+            connect_to_db_coupons(out[2], False)
     except Exception as e:
         print(e)
 
