@@ -246,7 +246,9 @@ def get_coupons():
         second_name = articles[1].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         second_coupon_url = second_name.find("a")["href"]
         urls2 = [first_coupon_url, second_coupon_url]
+        print(urls2)
         new_coupons, urls = connect_to_db_coupons(urls2, True)
+        print(urls)
         if new_coupons:
             hit = False
             index = 0
@@ -265,6 +267,7 @@ def get_coupons():
                     percent = article.find("span", {"class": "grid_onsale"}).text
                     if "100%" not in percent:
                         continue
+                    print(coupon_url)
                     image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
                     time.sleep(3)
                     send_coupons(name.text, percent, coupon_url, image)
@@ -317,8 +320,8 @@ def connect_to_db_coupons(urls, read):
         urls2 = [settings["url"], settings["url2"]]
         if urls[0] == urls2[0] or urls[1] == urls2[1]:
             print("No new coupons found")
-            return [False, urls]
-        return [True, urls]
+            return [False, urls2]
+        return [True, urls2]
 
 def send_coupons(name, percent, coupon_url, image):
     ca = certifi.where()
