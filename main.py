@@ -245,6 +245,7 @@ def coupon_scorpion(url):
         second_coupon_url = second_name.find("a")["href"]
         urls2 = [first_coupon_url, second_coupon_url]
         new_coupons, urls = connect_to_db_coupons(urls2, True)
+        print(urls2)
         if new_coupons:
             hit = False
             index = 0
