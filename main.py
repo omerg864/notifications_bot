@@ -45,7 +45,8 @@ commands = ["moviealert - following imdb url to add to your movie alert list", "
             "moviealertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
             "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change",
             "unregisterfuelnotifications - unregister from receiving fuel costs notifications", "alertlist - list of all registered services" 
-            ,"stopbot - stops the bot and deletes your alert list"]
+            ,"waitcoupons - not sending new coupons and holding them until you exit wait mode", "exitwaitcoupons - send all gathered coupons while being in wait mode"
+             ,"stopbot - stops the bot and deletes your alert list"]
 
 manager_commands = ["managerlist - list of manager command require password"]
 
