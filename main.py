@@ -243,14 +243,14 @@ def get_coupons():
         articles = list_of_coupons.find_all("article")
         first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         first_coupon_url = first_name.find("a")["href"]
-        new_coupons, last_url = connect_to_db_coupons(first_coupon_url, True)
+        new_coupons, urls = connect_to_db_coupons(first_coupon_url, True)
         if new_coupons:
             hit = False
             for article in articles:
                 try:
                     name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
                     coupon_url = name.find("a")["href"]
-                    if coupon_url == last_url:
+                    if coupon_url in urls:
                         hit = True
                         break
                     percent = article.find("span", {"class": "grid_onsale"}).text
@@ -263,23 +263,21 @@ def get_coupons():
                     print(e)
                     print("False coupon found")
             if not hit:
-                index = 2
-                while not hit:
-                    page_url = coupons_url + f"page/{index}/"
-                    response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
-                    soup = BeautifulSoup(response, "html.parser")
-                    list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
-                    articles = list_of_coupons.find_all("article")
-                    first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
-                    coupon_url = first_name.find("a")["href"]
-                    if coupon_url == last_url:
-                        hit = True
-                        break
+                page_url = coupons_url + f"page/2/"
+                response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
+                soup = BeautifulSoup(response, "html.parser")
+                list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
+                articles = list_of_coupons.find_all("article")
+                first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+                coupon_url = first_name.find("a")["href"]
+                if coupon_url in urls:
+                    hit = True
+                if not hit:
                     for article in articles:
                         try:
                             name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
                             coupon_url = name.find("a")["href"]
-                            if coupon_url == last_url:
+                            if coupon_url in urls:
                                 hit = True
                                 break
                             percent = article.find("span", {"class": "grid_onsale"}).text
@@ -291,9 +289,6 @@ def get_coupons():
                         except Exception as e:
                             print(e)
                             print("False coupon found")
-                    index += 1
-                    if index == 4:
-                        break
             connect_to_db_coupons(first_coupon_url, False)
     except Exception as e:
         print(e)
@@ -306,11 +301,12 @@ def connect_to_db_coupons(url, read):
         query = {"_id" : 1 }
         db.coupons.replace_one(query ,{"url": url, "_id" : 1})
     else:
-        last_url = db.coupons.find_one({"_id": 1})["url"]
-        if last_url == url:
+        settings = db.coupons.find_one({"_id": 1})
+        urls = [settings["url"], settings["url2"]]
+        if url in urls:
             print("No new coupons found")
-            return [False, last_url]
-        return [True, last_url]
+            return [False, urls]
+        return [True, urls]
 
 def send_coupons(name, percent, coupon_url, image):
     ca = certifi.where()
