@@ -311,8 +311,13 @@ def send_coupons(name, percent, coupon_url, image):
     db = client.new_database
     chat_ids = db.registered.find()
     for chat_id in chat_ids:
-        updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
-        print("sent coupon")
+        is_waiting = db.waiting.find_one({"_id": chat_id['_id']})
+        if is_waiting != None:
+            db.gathered.insert_one({"chat_id": chat_id['_id'], "name": name, "coupon_url": coupon_url, "image": image, "percent": percent})
+            print("Added to waiting list")
+        else:
+            updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
+            print("sent coupon")
 
 def get_fuel_settings():
     ca = certifi.where()
@@ -546,6 +551,40 @@ def create_org(update, context):
     else:
         update.message.reply_text("Wrong password")
 
+def wait_coupons(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    chat_id = update.message.chat_id
+    coupon = db.waiting.find_one({"_id": chat_id})
+    if coupon != None:
+        update.message.reply_text("you are already in wait mode")
+    else:
+        sub = db.registered.find_one({"_id": chat_id})
+        if sub != None:
+            update.message.reply_text("you will receive notifications about Udemy 100% off coupon when you quit wait mode")
+            db.waiting.insert_one({"_id": chat_id})
+        else:
+            update.message.reply_text("first register for coupons notifications using /coupons")
+
+def exit_wait_coupons(update, context):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    chat_id = update.message.chat_id
+    coupon = db.waiting.find_one({"_id": chat_id})
+    if coupon != None:
+        db.waiting.delete_one({"_id": chat_id})
+        update.message.reply_text("exited wait mode. sending coupons gathered")
+        coupons = db.gathered.find({"chat_id": chat_id})
+        for c in coupons:
+            name = coupons["name"]
+            coupon_url = coupons["coupon_url"]
+            percent = coupons["percent"]
+            updater.dispatcher.bot.sendPhoto(chat_id=chat_id, photo=coupons["image"], caption=f'{name} is {percent}: {coupon_url}')
+    else:
+        update.message.reply_text("you are not in wait mode")
+
 
 def main():
     """Start the bot."""
@@ -571,6 +610,8 @@ def main():
     dp.add_handler(CommandHandler("fuelcosts", register_fuel_notifications))
     dp.add_handler(CommandHandler("unregisterfuelnotifications", unregister_fuel_notifications))
     dp.add_handler(CommandHandler("alertlist", alert_list))
+    dp.add_handler(CommandHandler("waitcoupons", wait_coupons))
+    dp.add_handler(CommandHandler("exitwaitcoupons", exit_wait_coupons))
 
 
     # manager commands
