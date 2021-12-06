@@ -303,11 +303,11 @@ def connect_to_db_coupons(urls, read):
     db = client.new_database
     if not read:
         query = {"_id" : 1 }
-        db.coupons.replace_one(query ,{"url": url[0], "url2": url[1], "_id" : 1})
+        db.coupons.replace_one(query ,{"url": urls[0], "url2": urls[1], "_id" : 1})
     else:
         settings = db.coupons.find_one({"_id": 1})
-        urls = [settings["url"], settings["url2"]]
-        if url in urls:
+        urls2 = [settings["url"], settings["url2"]]
+        if urls[0] == urls2[0] or urls[1] == urls2[1]:
             print("No new coupons found")
             return [False, urls]
         return [True, urls]
