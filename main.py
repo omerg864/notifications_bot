@@ -249,13 +249,19 @@ def get_coupons():
         new_coupons, urls = connect_to_db_coupons(urls2, True)
         if new_coupons:
             hit = False
+            index = 0
             for article in articles:
                 try:
                     name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
                     coupon_url = name.find("a")["href"]
-                    if coupon_url in urls:
-                        hit = True
-                        break
+                    if index != 0:
+                        if coupon_url in urls:
+                            hit = True
+                            break
+                    else:
+                        if coupon_url == urls[0]:
+                            hit = True
+                            break
                     percent = article.find("span", {"class": "grid_onsale"}).text
                     if "100%" not in percent:
                         continue
@@ -265,6 +271,7 @@ def get_coupons():
                 except Exception as e:
                     print(e)
                     print("False coupon found")
+                index += 1
             if not hit:
                 page_url = coupons_url + f"page/2/"
                 response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
