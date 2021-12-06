@@ -264,7 +264,7 @@ def coupon_scorpion(url):
                     if "100%" not in percent:
                         continue
                     image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
-                    time.sleep(3)
+                    time.sleep(4)
                     send_coupons(name.text, percent, coupon_url, image)
                 except Exception as e:
                     print(e)
@@ -283,6 +283,7 @@ def get_coupons():
         out = coupon_scorpion(coupons_url)
         if out[0]:
             if not out[1]:
+                print("page 2")
                 coupon_scorpion(coupons_url + 'page/2/')
             connect_to_db_coupons(out[2], False)
     except Exception as e:
