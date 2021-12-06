@@ -245,7 +245,8 @@ def get_coupons():
         first_coupon_url = first_name.find("a")["href"]
         second_name = articles[1].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         second_coupon_url = second_name.find("a")["href"]
-        new_coupons, urls = connect_to_db_coupons(first_coupon_url, True)
+        urls2 = [first_coupon_url, second_coupon_url]
+        new_coupons, urls = connect_to_db_coupons(urls2, True)
         if new_coupons:
             hit = False
             for article in articles:
