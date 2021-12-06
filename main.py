@@ -143,7 +143,7 @@ def movie_alert(update: Update, context: CallbackContext):
         update.message.reply_text("You will be notified when " + movie_name + " is released!")
     except Exception as e:
         print(e)
-        update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
+        update.message.reply_text("Invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
 
 def remove_from_db(url, chat_id):
     ca = certifi.where()
@@ -182,7 +182,7 @@ def delete_alert(update: Update, context: CallbackContext):
         update.message.reply_text(movie_name + " is removed from the movie alert list!")
     except Exception as e:
         print(e)
-        update.message.reply_text("invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
+        update.message.reply_text("Invalid URL. Try something like this: /moviealert https://imdb.com/title/tt0111161/")
 
 def clear_movie_alerts(update, context):
     ca = certifi.where()
@@ -413,9 +413,9 @@ def register_fuel_notifications(update, context):
     chat_id = update.message.chat_id
     if db.registered.find_one({"_id": chat_id}) == None:
         db.registered.insert_one({"_id": chat_id})
-        update.message.reply_text("you will receive notifications about fuel prices")
+        update.message.reply_text("You will receive notifications about fuel prices")
     else:
-        update.message.reply_text("you are already registered")
+        update.message.reply_text("You are already registered")
 
 def unregister_fuel_notifications(update, context):
     ca = certifi.where()
@@ -424,9 +424,9 @@ def unregister_fuel_notifications(update, context):
     chat_id = update.message.chat_id
     if db.registered.find_one({"_id": chat_id}) != None:
         db.registered.delete_one({"_id": chat_id})
-        update.message.reply_text("you will not receive notifications about fuel prices")
+        update.message.reply_text("You will not receive notifications about fuel prices")
     else:
-        update.message.reply_text("you are not registered")
+        update.message.reply_text("You are not registered")
 
 def alert_list(update, context):
     ca = certifi.where()
@@ -543,7 +543,7 @@ def create_org(update, context):
     if message[0] == settings["password"]:
         accepted = True
     if accepted:
-        update.message.reply_text("password accepted")
+        update.message.reply_text("Password accepted")
         date = message[1]
         if create_organization(date):
             update.message.reply_text("Organization created")
@@ -559,14 +559,14 @@ def wait_coupons(update, context):
     chat_id = update.message.chat_id
     coupon = db.waiting.find_one({"_id": chat_id})
     if coupon != None:
-        update.message.reply_text("you are already in wait mode")
+        update.message.reply_text("You are already in wait mode")
     else:
         sub = db.registered.find_one({"_id": chat_id})
         if sub != None:
-            update.message.reply_text("you will receive notifications about Udemy 100% off coupon when you quit wait mode")
+            update.message.reply_text("Entered wait mode. In the meantime the coupons are gathered and will be sent when you exit wait mode")
             db.waiting.insert_one({"_id": chat_id})
         else:
-            update.message.reply_text("first register for coupons notifications using /coupons")
+            update.message.reply_text("First register for coupons notifications using /coupons")
 
 def exit_wait_coupons(update, context):
     ca = certifi.where()
@@ -576,15 +576,19 @@ def exit_wait_coupons(update, context):
     coupon = db.waiting.find_one({"_id": chat_id})
     if coupon != None:
         db.waiting.delete_one({"_id": chat_id})
-        update.message.reply_text("exited wait mode. sending coupons gathered")
+        update.message.reply_text("Exited wait mode. sending coupons gathered")
         coupons = db.gathered.find({"chat_id": chat_id})
+        sent = False
         for c in coupons:
+            sent = True
             name = coupons["name"]
             coupon_url = coupons["coupon_url"]
             percent = coupons["percent"]
             updater.dispatcher.bot.sendPhoto(chat_id=chat_id, photo=coupons["image"], caption=f'{name} is {percent}: {coupon_url}')
+        if not sent:
+            update.message.reply_text("No coupons gathered")
     else:
-        update.message.reply_text("you are not in wait mode")
+        update.message.reply_text("You are not in wait mode")
 
 
 def main():
