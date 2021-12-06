@@ -243,6 +243,8 @@ def get_coupons():
         articles = list_of_coupons.find_all("article")
         first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         first_coupon_url = first_name.find("a")["href"]
+        second_name = articles[1].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
+        second_coupon_url = second_name.find("a")["href"]
         new_coupons, urls = connect_to_db_coupons(first_coupon_url, True)
         if new_coupons:
             hit = False
@@ -289,17 +291,19 @@ def get_coupons():
                         except Exception as e:
                             print(e)
                             print("False coupon found")
-            connect_to_db_coupons(first_coupon_url, False)
+            urls[0] = first_coupon_url
+            urls[1] = second_coupon_url
+            connect_to_db_coupons(urls, False)
     except Exception as e:
         print(e)
 
-def connect_to_db_coupons(url, read):
+def connect_to_db_coupons(urls, read):
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
     db = client.new_database
     if not read:
         query = {"_id" : 1 }
-        db.coupons.replace_one(query ,{"url": url, "_id" : 1})
+        db.coupons.replace_one(query ,{"url": url[0], "url2": url[1], "_id" : 1})
     else:
         settings = db.coupons.find_one({"_id": 1})
         urls = [settings["url"], settings["url2"]]
