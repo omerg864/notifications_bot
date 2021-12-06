@@ -233,9 +233,7 @@ def unregister_coupons(update, context):
     else:
         update.message.reply_text("You are not registered for coupons alerts!")
 
-def get_coupons():
-    ##"""Get the coupons from the website."""
-    print("Checking coupons...")
+def coupon_scorpion(url):
     try:
         response = requests.get(coupons_url, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(response, "html.parser")
@@ -246,9 +244,7 @@ def get_coupons():
         second_name = articles[1].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
         second_coupon_url = second_name.find("a")["href"]
         urls2 = [first_coupon_url, second_coupon_url]
-        print(urls2)
         new_coupons, urls = connect_to_db_coupons(urls2, True)
-        print(urls)
         if new_coupons:
             hit = False
             index = 0
@@ -267,7 +263,6 @@ def get_coupons():
                     percent = article.find("span", {"class": "grid_onsale"}).text
                     if "100%" not in percent:
                         continue
-                    print(coupon_url)
                     image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
                     time.sleep(3)
                     send_coupons(name.text, percent, coupon_url, image)
@@ -275,36 +270,21 @@ def get_coupons():
                     print(e)
                     print("False coupon found")
                 index += 1
-            if not hit:
-                page_url = coupons_url + f"page/2/"
-                response = requests.get(page_url, headers={'User-Agent': 'Mozilla/5.0'}).text
-                soup = BeautifulSoup(response, "html.parser")
-                list_of_coupons = soup.find("div", {"class": "eq_grid pt5 rh-flex-eq-height col_wrap_three"})
-                articles = list_of_coupons.find_all("article")
-                first_name = articles[0].find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
-                coupon_url = first_name.find("a")["href"]
-                if coupon_url in urls:
-                    hit = True
-                if not hit:
-                    for article in articles:
-                        try:
-                            name = article.find("h3", {"class": "flowhidden mb10 fontnormal position-relative"})
-                            coupon_url = name.find("a")["href"]
-                            if coupon_url in urls:
-                                hit = True
-                                break
-                            percent = article.find("span", {"class": "grid_onsale"}).text
-                            if "100%" not in percent:
-                                continue
-                            image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
-                            time.sleep(3)
-                            send_coupons(name.text, percent, coupon_url, image)
-                        except Exception as e:
-                            print(e)
-                            print("False coupon found")
-            urls[0] = first_coupon_url
-            urls[1] = second_coupon_url
-            connect_to_db_coupons(urls, False)
+            return [new_coupons, hit, urls2]
+    except Exception as e:
+        print(e)
+        return False
+    return [new_coupons]
+
+def get_coupons():
+    ##"""Get the coupons from the website."""
+    print("Checking coupons...")
+    try:
+        out = coupon_scorpion(coupons_url)
+        if out[0]:
+            if not out[1]:
+                coupon_scorpion(coupons_url + 'page/2/')
+            connect_to_db_coupons(out[3], False)
     except Exception as e:
         print(e)
 
@@ -330,6 +310,7 @@ def send_coupons(name, percent, coupon_url, image):
     chat_ids = db.registered.find()
     for chat_id in chat_ids:
         updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
+        print("sent coupon")
 
 def get_fuel_settings():
     ca = certifi.where()
