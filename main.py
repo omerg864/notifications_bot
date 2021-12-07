@@ -581,10 +581,10 @@ def exit_wait_coupons(update, context):
         sent = False
         for c in coupons:
             sent = True
-            name = coupons["name"]
-            coupon_url = coupons["coupon_url"]
-            percent = coupons["percent"]
-            updater.dispatcher.bot.sendPhoto(chat_id=chat_id, photo=coupons["image"], caption=f'{name} is {percent}: {coupon_url}')
+            name = c["name"]
+            coupon_url = c["coupon_url"]
+            percent = c["percent"]
+            updater.dispatcher.bot.sendPhoto(chat_id=chat_id, photo=c["image"], caption=f'{name} is {percent}: {coupon_url}')
         if not sent:
             update.message.reply_text("No coupons gathered")
     else:
