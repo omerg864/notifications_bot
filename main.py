@@ -248,6 +248,7 @@ def coupon_scorpion(url):
         new_coupons, urls = connect_to_db_coupons(urls2, True)
         print(urls2)
         if new_coupons:
+            courses = []
             hit = False
             index = 0
             for article in articles:
@@ -267,11 +268,17 @@ def coupon_scorpion(url):
                         continue
                     image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
                     time.sleep(4)
+                    courses.append({"name": name.text, "url": coupon_url, "image": image, "percent": percent})
                     send_coupons(name.text, percent, coupon_url, image)
                 except Exception as e:
                     print(e)
                     print("False coupon found")
                 index += 1
+            if index < 11:
+                for course in courses:
+                    send_coupons(course["name"], course["percent"], course["url"], course["image"])
+            else:
+                send_coupons_list(courses)
             return [new_coupons, hit, urls2]
     except Exception as e:
         print(e)
@@ -319,6 +326,29 @@ def send_coupons(name, percent, coupon_url, image):
         else:
             updater.dispatcher.bot.sendPhoto(chat_id=chat_id["_id"], photo=image, caption=f'{name} is {percent}: {coupon_url}')
             print("sent coupon")
+
+def send_coupons_list(coupons):
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.new_database
+    chat_ids = db.registered.find()
+    message = ""
+    index = 1
+    for coupon in coupons:
+        name = coupon["name"]
+        percent = coupon["percent"]
+        coupon_url = coupon["url"]
+        message += f"{index}. {name} is {percent}: {coupon_url}\n"
+    for chat_id in chat_ids:
+        is_waiting = db.waiting.find_one({"_id": chat_id['_id']})
+        if is_waiting != None:
+            for coupon in coupons:
+                db.gathered.insert_one({"chat_id": chat_id['_id'], "name": coupon['name'], "coupon_url": coupon['coupon_url'], "image": coupon['image'], "percent": coupon['percent']})
+                print("Added to waiting list")
+        else:
+            updater.dispatcher.bot.sendMessage(chat_id=chat_id["_id"], text=message)
+            print("sent coupons list")
+
 
 def get_fuel_settings():
     ca = certifi.where()
