@@ -269,7 +269,6 @@ def coupon_scorpion(url):
                     image = article.find("img", {"class": "ezlazyload"})["data-ezsrc"]
                     time.sleep(4)
                     courses.append({"name": name.text, "url": coupon_url, "image": image, "percent": percent})
-                    send_coupons(name.text, percent, coupon_url, image)
                 except Exception as e:
                     print(e)
                     print("False coupon found")
