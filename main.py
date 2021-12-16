@@ -620,6 +620,9 @@ def exit_wait_coupons(update, context):
     else:
         update.message.reply_text("You are not in wait mode")
 
+def get_chat_id(update, context):
+    update.message.reply_text(update.message.chat_id)
+
 
 def main():
     """Start the bot."""
@@ -647,6 +650,7 @@ def main():
     dp.add_handler(CommandHandler("alertlist", alert_list))
     dp.add_handler(CommandHandler("waitcoupons", wait_coupons))
     dp.add_handler(CommandHandler("exitwaitcoupons", exit_wait_coupons))
+    dp.add_handler(CommandHandler("chatid", get_chat_id))
 
 
     # manager commands
