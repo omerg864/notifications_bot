@@ -55,6 +55,12 @@ manager_commands = ["managerlist - list of manager command require password"]
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
+    chat_id = update.message.chat_id
+    ca = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
+    db = client.manager
+    if db.registered.find_one({"_id": chat_id}) is None:
+        db.registered.insert_one({"_id": chat_id})
     update.message.reply_text('Hi! check out the commands with /help')
     update.message.reply_text('Also some times the server takes a while (about 30 seconds) to respond, so be patient!')
 
@@ -119,6 +125,8 @@ def stop_bot(update, context):
     db = client.movie_alerts
     db.alerts.delete_many({"chat_id": chat_id})
     db = client.new_database
+    db.registered.delete_many({"_id" : chat_id})
+    db = client.manager
     db.registered.delete_many({"_id" : chat_id})
     
 
@@ -623,6 +631,33 @@ def exit_wait_coupons(update, context):
 def get_chat_id(update, context):
     update.message.reply_text(update.message.chat_id)
 
+def echo_message(update, context):
+    message = update.message.text
+    message = message.replace("/echo ", "").split(" ")
+    settings = get_manager_settings()
+    accepted = False
+    if message[0] == settings["password"]:
+        accepted = True
+    if accepted:
+        update.message.reply_text("Password accepted")
+        echo = message[1]
+        CA = certifi.where()
+        client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
+        db = client.manager
+        chats = db.registerd.find()
+        for chat in chats:
+            updater.dispatcher.bot.send_message(chat_id=chat["_id"], text=echo)
+    else:
+        update.message.reply_text("Wrong password")
+
+
+def get_registered(update, context):
+    CA = certifi.where()
+    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
+    db = client.manager
+    chats = len(db.registerd.find())
+    update.message.reply_text(f"{chats} pepole with active bot")
+
 
 def main():
     """Start the bot."""
@@ -656,6 +691,8 @@ def main():
     # manager commands
 
     dp.add_handler(CommandHandler("createorg", create_org))
+    dp.add_handler(CommandHandler("echo", echo_message))
+    dp.add_handler(CommandHandler("getregistered", get_registered))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
