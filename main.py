@@ -647,13 +647,14 @@ def echo_message(update, context):
         chats = db.registerd.find()
         for chat in chats:
             updater.dispatcher.bot.send_message(chat_id=chat["_id"], text=echo)
+            print("sent to " + str(chat["_id"]))
     else:
         update.message.reply_text("Wrong password")
 
 
 def get_registered(update, context):
     message = update.message.text
-    message = message.replace("/getregistered  ", "").split(" ")
+    message = message.replace("/getregistered ", "").split(" ")
     settings = get_manager_settings()
     accepted = False
     if message[0] == settings["password"]:
@@ -703,7 +704,7 @@ def change_password(update, context):
         CA = certifi.where()
         client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
         db = client.manager
-        db.settings.update_one({"_id": 1}, {"_id": 1, "password": new_password})
+        db.settings.update_one({"_id": 1}, {"$set": {"password": new_password}})
         update.message.reply_text("Password changed")
     else:
         update.message.reply_text("Wrong password")
