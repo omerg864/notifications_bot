@@ -652,11 +652,62 @@ def echo_message(update, context):
 
 
 def get_registered(update, context):
-    CA = certifi.where()
-    client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
-    db = client.manager
-    chats = len(db.registerd.find())
-    update.message.reply_text(f"{chats} pepole with active bot")
+    message = update.message.text
+    message = message.replace("/getregistered  ", "").split(" ")
+    settings = get_manager_settings()
+    accepted = False
+    if message[0] == settings["password"]:
+        accepted = True
+    if accepted:
+        update.message.reply_text("Password accepted")
+        CA = certifi.where()
+        client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
+        db = client.manager
+        count = 0
+        chats = db.registerd.find()
+        for chat in chats:
+            count += 1
+        message = f"Pepole with active bot : {count}\n"
+        db = client.new_database
+        reg = db.registered.find()
+        count = 0
+        for r in reg:
+            count += 1
+        message += f'People registered for coupons : {count}\n'
+        db = client.fuel
+        reg = db.registered.find()
+        count = 0
+        for r in reg:
+            count += 1
+        message += f'People registered for fuel notifications : {count}\n'
+        db = client.movie_alerts
+        reg = db.alerts.find()
+        count = 0
+        for r in reg:
+            count += 1
+        message += f'movies alerts : {count}\n'
+        update.message.reply_text(message)
+    else:
+        update.message.reply_text("Wrong password")
+
+def change_password(update, context):
+    message = update.message.text
+    message = message.replace("/changepass ", "").split(" ")
+    settings = get_manager_settings()
+    accepted = False
+    if message[0] == settings["password"]:
+        accepted = True
+    if accepted:
+        update.message.reply_text("Password accepted")
+        new_password = message[1]
+        CA = certifi.where()
+        client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
+        db = client.manager
+        db.settings.update_one({"_id": 1}, {"_id": 1, "password": new_password})
+        update.message.reply_text("Password changed")
+    else:
+        update.message.reply_text("Wrong password")
+
 
 
 def main():
@@ -693,6 +744,7 @@ def main():
     dp.add_handler(CommandHandler("createorg", create_org))
     dp.add_handler(CommandHandler("echo", echo_message))
     dp.add_handler(CommandHandler("getregistered", get_registered))
+    dp.add_handler(CommandHandler("changepass", change_password))
 
     # on noncommand i.e message - echo the message on Telegram
     dp.add_handler(MessageHandler(Filters.text, echo))
