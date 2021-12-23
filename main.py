@@ -644,7 +644,7 @@ def echo_message(update, context):
         CA = certifi.where()
         client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
         db = client.manager
-        chats = db.registerd.find()
+        chats = db.registered.find()
         for chat in chats:
             updater.dispatcher.bot.send_message(chat_id=chat["_id"], text=echo)
             print("sent to " + str(chat["_id"]))
@@ -665,7 +665,7 @@ def get_registered(update, context):
         client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=CA)
         db = client.manager
         count = 0
-        chats = db.registerd.find()
+        chats = db.registered.find()
         for chat in chats:
             count += 1
         message = f"Pepole with active bot : {count}\n"
