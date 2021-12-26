@@ -720,9 +720,9 @@ def manager_list(update, context):
         accepted = True
     if accepted:
         message = ""
-        for command in manager_commands:
-            message += command + "\n"
-        if message != "":
+        if len(manager_commands) > 1:
+            for command in manager_commands:
+                message += command + "\n"
             update.message.reply_text(message)
         else:
             update.message.reply_text("Can't help you! good luck!")
