@@ -45,10 +45,12 @@ commands = ["moviealert - following imdb url to add to your movie alert list", "
             "moviealertlist - list of your movie alerts", "clearmoviealerts - delete all of your movie alerts", f"coupons - register to receive Udemy 100% off coupons",
             "unregistercoupons - unregister from receiving Udemy coupons", "fuelcosts - register to receive israel fuel costs notifications on change",
             "unregisterfuelnotifications - unregister from receiving fuel costs notifications", "alertlist - list of all registered services" 
-            ,"waitcoupons - not sending new coupons and holding them until you exit wait mode", "exitwaitcoupons - send all gathered coupons while being in wait mode"
-             ,"stopbot - stops the bot and deletes your alert list"]
+            ,"waitcoupons - not sending new coupons and holding them until you exit wait mode", "exitwaitcoupons - send all gathered coupons while being in wait mode",
+             "managercommands - list of manager command require password", "stopbot - stops the bot and deletes your alert list"]
 
-manager_commands = ["managerlist - list of manager command require password"]
+manager_commands = ["All commands here require admin password after the command and arguments can be inserted after that:", "managercommands - list of manager command require password",
+                    "craeteorg - create a new organization in mishmar ramla with gived date: YYYY-MM-DD", "echo - send message to all users using the bot",
+                    "getregistered - get users registered to the bot and services", "changepass - change admin's password"]
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -709,6 +711,24 @@ def change_password(update, context):
     else:
         update.message.reply_text("Wrong password")
 
+def manager_list(update, context):
+    message = update.message.text
+    message = message.replace("/managercommands ", "").split(" ")
+    settings = get_manager_settings()
+    accepted = False
+    if message[0] == settings["password"]:
+        accepted = True
+    if accepted:
+        message = ""
+        for command in manager_commands:
+            message += command + "\n"
+        if message != "":
+            update.message.reply_text(message)
+        else:
+            update.message.reply_text("Can't help you! good luck!")
+    else:
+        update.message.reply_text("Wrong password")
+
 
 
 def main():
@@ -738,6 +758,7 @@ def main():
     dp.add_handler(CommandHandler("waitcoupons", wait_coupons))
     dp.add_handler(CommandHandler("exitwaitcoupons", exit_wait_coupons))
     dp.add_handler(CommandHandler("chatid", get_chat_id))
+    dp.add_handler(CommandHandler("managercommands", manager_list))
 
 
     # manager commands
