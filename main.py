@@ -30,7 +30,7 @@ from random_user_agent.params import SoftwareName, OperatingSystem
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
 PORT = int(os.environ.get('PORT', 8443))
 
-coupons_url = "https://couponscorpion.com/"
+coupons_url = os.environ.get("COUPONS_URL")
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -244,7 +244,7 @@ def unregister_coupons(update, context):
     else:
         update.message.reply_text("You are not registered for coupons alerts!")
 
-def coupon_scorpion(url):
+def coupon_scrape(url):
     try:
         response = requests.get(coupons_url, headers={'User-Agent': 'Mozilla/5.0'}).text
         soup = BeautifulSoup(response, "html.parser")
@@ -298,11 +298,11 @@ def get_coupons():
     ##"""Get the coupons from the website."""
     print("Checking coupons...")
     try:
-        out = coupon_scorpion(coupons_url)
+        out = coupon_scrape(coupons_url)
         if out[0]:
             if not out[1]:
                 print("page 2")
-                coupon_scorpion(coupons_url + 'page/2/')
+                coupon_scrape(coupons_url + 'page/2/')
             connect_to_db_coupons(out[2], False)
     except Exception as e:
         print(e)
