@@ -25,6 +25,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 DEBUG = os.environ.get("DEBUG_VALUE") == "True"
@@ -57,6 +60,7 @@ manager_commands = ["All commands here require admin password after the command 
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
     """Send a message when the command /start is issued."""
+    print("started")
     chat_id = update.message.chat_id
     ca = certifi.where()
     client = pymongo.MongoClient(os.environ.get("MONGODB_ACCESS"), tlsCAFile=ca)
@@ -778,7 +782,7 @@ def main():
     updater.start_webhook(listen="0.0.0.0",
                       port=PORT,
                       url_path=TOKEN,
-                      webhook_url="https://my-notifications-bot.herokuapp.com/" + TOKEN)
+                      webhook_url=f"https://notifications-bot-fdph.onrender.com" + TOKEN)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
